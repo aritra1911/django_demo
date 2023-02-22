@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework.apps.RestFrameworkConfig',
+    #'rest_framework.authtoken.apps.AuthTokenConfig',
+    'rest_framework.authtoken',
+    'demoapp.apps.DemoappConfig',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +85,22 @@ DATABASES = {
 }
 
 
+# Authentication Backends
+# https://docs.djangoproject.com/en/4.1/ref/settings/#authentication-backends
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    #'demoapp.auth_backend.CustomerBackend',
+    'rest_framework.authentication.TokenAuthentication',
+]
+
+
+# Substituting a custom User model
+# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-user-model
+
+AUTH_USER_MODEL = 'demoapp.Customer'
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -98,6 +118,16 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES':(
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
 
 
 # Internationalization
