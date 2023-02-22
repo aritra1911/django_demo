@@ -1,5 +1,4 @@
-from rest_framework import viewsets, exceptions, authentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, mixins, exceptions, authentication
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -20,20 +19,21 @@ class CustomAuthToken(ObtainAuthToken):
         return Response({'token': token.key})
 
 
-class CustomerViewSet(viewsets.ModelViewSet):
+class CustomerViewSet(mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin,
+                      mixins.ListModelMixin,
+                      viewsets.GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = (IsCustomerAuthenticated,)
 
     def get_queryset(self):
+        '''
+        
+        '''
         queryset = super().get_queryset()
         if not self.request.user.is_superuser:
             queryset = queryset.filter(id=self.request.user.id)
         return queryset
-
-    # Disallow DELETE on this ViewSet
-    def destroy(self, request, *args, **kwargs):
-        raise exceptions.MethodNotAllowed(
-            request.method, detail='DELETE method is not allowed.'
-        )
