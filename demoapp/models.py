@@ -16,7 +16,8 @@ class Customer(AbstractBaseUser, PermissionsMixin):
     objects = CustomerManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = []
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name', 'pan_number',]
 
     def __str__(self):
         return self.username
