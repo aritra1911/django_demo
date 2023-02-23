@@ -46,7 +46,6 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         customer = Customer.objects.create_user(
-            #username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),

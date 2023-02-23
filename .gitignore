@@ -1,6 +1,8 @@
 __pycache__/
 venv/
 migrations/
+bank_logos/
+cheque_images/
 *.pyc
 *.swp
 *.sqlite3
