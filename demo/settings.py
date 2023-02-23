@@ -134,6 +134,31 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'en-us'
 
+
+#  A logging configuration dictionary.
+# https://docs.djangoproject.com/en/4.1/ref/settings/#logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
