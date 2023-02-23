@@ -4,7 +4,6 @@ from demoapp.managers import CustomerManager
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=30, unique=True)
     email = models.EmailField(unique=True, blank=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
@@ -15,9 +14,9 @@ class Customer(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomerManager()
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name', 'pan_number',]
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'pan_number',]
 
     def __str__(self):
-        return self.username
+        return self.email

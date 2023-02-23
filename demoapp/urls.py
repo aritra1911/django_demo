@@ -9,7 +9,7 @@ urlpatterns = (
     path('api/', include(router.urls), name='api'),
     path(
         'api-token-auth/',
-        views.CustomAuthToken.as_view(),
-        name='api_token_auth'
+        views.ObtainAuthTokenWithEmail.as_view(),
+        name='api_token_auth_with_email'
     ),
 )
