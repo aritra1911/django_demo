@@ -5,7 +5,7 @@ from demoapp.managers import CustomerManager
 
 class Customer(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=30, unique=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     middle_name = models.CharField(max_length=30, blank=True)

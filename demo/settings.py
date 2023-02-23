@@ -90,7 +90,6 @@ DATABASES = {
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    #'demoapp.auth_backend.CustomerBackend',
     'rest_framework.authentication.TokenAuthentication',
 ]
 
