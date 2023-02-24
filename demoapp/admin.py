@@ -1,10 +1,8 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 from demoapp.models import Customer, Bank, CustomerBankAccount
 
 
-class CustomerAdmin(UserAdmin):
-    model = Customer
+class CustomerAdmin(admin.ModelAdmin):
     ordering = ('email',)
     list_display = (
         'email', 'first_name', 'last_name', 'middle_name', 'pan_number',

@@ -3,6 +3,7 @@ venv/
 migrations/
 bank_logos/
 cheque_images/
+logs/
 *.pyc
 *.swp
 *.sqlite3
