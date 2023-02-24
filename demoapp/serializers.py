@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
-from demoapp.models import Customer
+from demoapp.models import Customer, Bank, CustomerBankAccount
 
 
 class AuthEmailTokenSerializer(serializers.Serializer):
@@ -54,3 +54,15 @@ class CustomerSerializer(serializers.ModelSerializer):
             pan_number=validated_data.get('pan_number', ''),
         )
         return customer
+
+
+class BankSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bank
+        fields = '__all__'
+
+
+class CustomerBankAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerBankAccount
+        fields = '__all__'

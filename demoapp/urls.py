@@ -4,6 +4,10 @@ from demoapp import views
 
 router = routers.DefaultRouter()
 router.register(r'customers', views.CustomerViewSet, basename='customer')
+router.register(r'banks', views.BankViewSet, basename='bank')
+router.register(
+    r'accounts', views.CustomerBankAccountViewSet, basename='account'
+)
 
 urlpatterns = (
     path('api/', include(router.urls), name='api'),

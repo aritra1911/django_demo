@@ -1,9 +1,14 @@
-from rest_framework import viewsets, mixins, authentication, parsers, renderers
+from rest_framework import viewsets, mixins, authentication, parsers, renderers, permissions
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
-from demoapp.models import Customer
-from demoapp.serializers import AuthEmailTokenSerializer, CustomerSerializer
+from demoapp.models import Customer, Bank, CustomerBankAccount
+from demoapp.serializers import (
+    AuthEmailTokenSerializer,
+    CustomerSerializer,
+    BankSerializer,
+    CustomerBankAccountSerializer,
+)
 from demoapp.permissions import IsCustomerAuthenticated
 
 
@@ -34,11 +39,30 @@ class CustomerViewSet(mixins.CreateModelMixin,
                       viewsets.GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    authentication_classes = [authentication.TokenAuthentication]
+    authentication_classes = (authentication.TokenAuthentication,)
     permission_classes = (IsCustomerAuthenticated,)
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if not self.request.user.is_superuser:
             queryset = queryset.filter(id=self.request.user.id)
+        return queryset
+
+
+class BankViewSet(viewsets.ModelViewSet):
+    queryset = Bank.objects.all()
+    serializer_class = BankSerializer
+    permission_classes = (permissions.AllowAny,)
+
+
+class CustomerBankAccountViewSet(viewsets.ModelViewSet):
+    queryset = CustomerBankAccount.objects.all()
+    serializer_class = CustomerBankAccountSerializer
+    authentication_classes = (authentication.TokenAuthentication,)
+    permission_classes = (IsCustomerAuthenticated,)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(customer=self.request.user)
         return queryset
