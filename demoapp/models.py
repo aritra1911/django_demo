@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from demoapp.managers import CustomerManager
@@ -18,10 +19,10 @@ class Customer(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'pan_number',]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.get_fullname()
 
-    def get_fullname(self):
+    def get_fullname(self) -> str:
         if self.middle_name:
             return f'{self.first_name} {self.middle_name} {self.last_name}'
         return f'{self.first_name} {self.last_name}'
@@ -91,3 +92,14 @@ class CustomerBankAccount(models.Model):
                 name='unique_bank_account'
             ),
         ]
+
+    def clean(self):
+        """
+        Get the current number of accounts associated with the customer
+        and throw ValidationError if it is greater than 4.
+        """
+        num_accounts = CustomerBankAccount.objects.filter(
+            customer=self.customer
+        ).count()
+        if num_accounts >= 4:
+            raise ValidationError('A customer can have a maximum of 4 bank accounts.')
