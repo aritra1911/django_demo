@@ -4,6 +4,9 @@ from django.db import models
 from demoapp.managers import CustomerManager
 
 
+MAX_ACCOUNTS_PER_CUSTOMER = 4
+
+
 class Customer(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, blank=True)
     first_name = models.CharField(max_length=30, blank=True)
@@ -93,13 +96,16 @@ class CustomerBankAccount(models.Model):
             ),
         ]
 
-    def clean(self):
+    def clean(self) -> None:
         """
         Get the current number of accounts associated with the customer
         and throw ValidationError if it is greater than 4.
         """
-        num_accounts = CustomerBankAccount.objects.filter(
+        num_accounts: int = CustomerBankAccount.objects.filter(
             customer=self.customer
         ).count()
-        if num_accounts >= 4:
-            raise ValidationError('A customer can have a maximum of 4 bank accounts.')
+        if num_accounts >= MAX_ACCOUNTS_PER_CUSTOMER:
+            raise ValidationError(
+                'A customer can have a maximum of 4 bank accounts.'
+            )
+        return super().clean()

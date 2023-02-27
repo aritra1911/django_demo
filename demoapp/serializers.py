@@ -1,7 +1,9 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 from rest_framework import exceptions, serializers
 from demoapp.models import Customer, Bank, CustomerBankAccount
+from typing import Any
 
 
 class AuthEmailTokenSerializer(serializers.Serializer):
@@ -66,3 +68,16 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerBankAccount
         fields = '__all__'
+
+    def validate(self, attrs: Any) -> Any:
+        """
+        Manually trigger the clean() method of CustomerBankAccount model
+        instance to check if the custom validation is passed.
+        """
+        instance = CustomerBankAccount(**attrs)
+        try:
+            instance.clean()
+        # Note that this raises Django's ValidationError Exception
+        except ValidationError as e:
+            raise serializers.ValidationError(e.args[0])
+        return super().validate(attrs)
