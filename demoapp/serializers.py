@@ -67,14 +67,19 @@ class BankSerializer(serializers.ModelSerializer):
 class CustomerBankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerBankAccount
-        fields = '__all__'
+        fields = (
+            'id', 'account_number', 'ifsc_code', 'bank', 'cheque_image',
+            'branch_name', 'is_cheque_verified', 'name_as_per_bank_record',
+            'verification_mode', 'verification_status', 'account_type',
+        )
 
     def validate(self, attrs: Any) -> Any:
         """
         Manually trigger the clean() method of CustomerBankAccount model
         instance to check if the custom validation is passed.
         """
-        instance = CustomerBankAccount(**attrs)
+        customer = self.context['request'].user
+        instance = CustomerBankAccount(customer=customer, **attrs)
         try:
             instance.clean()
         # Note that this raises Django's ValidationError Exception

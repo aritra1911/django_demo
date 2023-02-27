@@ -1,7 +1,9 @@
 from rest_framework import viewsets, mixins, authentication, parsers, renderers, permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.serializers import BaseSerializer
 from demoapp.models import Customer, Bank, CustomerBankAccount
 from demoapp.serializers import (
     AuthEmailTokenSerializer,
@@ -9,6 +11,7 @@ from demoapp.serializers import (
     BankSerializer,
     CustomerBankAccountSerializer,
 )
+from typing import Any
 from demoapp.permissions import IsCustomerAuthenticated
 
 
@@ -59,10 +62,14 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
     queryset = CustomerBankAccount.objects.all()
     serializer_class = CustomerBankAccountSerializer
     authentication_classes = (authentication.TokenAuthentication,)
-    permission_classes = (IsCustomerAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if not self.request.user.is_superuser:
             queryset = queryset.filter(customer=self.request.user)
         return queryset
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        serializer.validated_data['customer'] = self.request.user
+        serializer.save(customer=self.request.user)
