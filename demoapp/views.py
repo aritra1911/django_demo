@@ -59,16 +59,15 @@ class BankViewSet(viewsets.ModelViewSet):
 
 
 class CustomerBankAccountViewSet(viewsets.ModelViewSet):
-    queryset = CustomerBankAccount.objects.all()
     serializer_class = CustomerBankAccountSerializer
     authentication_classes = (authentication.TokenAuthentication,)
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(customer=self.request.user)
-        return queryset
+    def get_object(self) -> CustomerBankAccount:
+        return CustomerBankAccount.objects.get(
+            customer=self.request.user,
+            is_active=True
+        )
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         customer = self.request.user
@@ -81,3 +80,14 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
         accounts.update(is_active=False)
 
         serializer.save(customer=customer)
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        active_account: CustomerBankAccount = self.get_object()
+        return Response(self.get_serializer(active_account).data)
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        active_account = self.get_object()
+        serializer = self.get_serializer(active_account, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)

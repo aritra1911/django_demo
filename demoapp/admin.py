@@ -5,7 +5,7 @@ from demoapp.models import Customer, Bank, CustomerBankAccount
 class CustomerAdmin(admin.ModelAdmin):
     ordering = ('email',)
     list_display = (
-        'email', 'first_name', 'last_name', 'middle_name', 'pan_number',
+        'id', 'email', 'first_name', 'last_name', 'middle_name', 'pan_number',
         'is_staff', 'is_active',
     )
     search_fields = (
@@ -20,7 +20,7 @@ class BankAdmin(admin.ModelAdmin):
 
 class CustomerBankAccountAdmin(admin.ModelAdmin):
     list_display = (
-        'customer', 'bank', 'account_number', 'ifsc_code', 'is_cheque_verified',
+        'id', 'customer', 'bank', 'account_number', 'ifsc_code', 'is_cheque_verified',
         'account_type', 'is_active',
     )
     list_filter = ('bank', 'is_cheque_verified', 'account_type',)
