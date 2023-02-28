@@ -84,6 +84,7 @@ class CustomerBankAccount(models.Model):
     account_type = models.CharField(
         max_length=20, choices=ACCOUNT_TYPES, default='savings'
     )
+    is_active = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'CustomerBankAccounts'

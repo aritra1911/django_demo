@@ -71,6 +71,7 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
             'id', 'account_number', 'ifsc_code', 'bank', 'cheque_image',
             'branch_name', 'is_cheque_verified', 'name_as_per_bank_record',
             'verification_mode', 'verification_status', 'account_type',
+            'is_active',
         )
 
     def validate(self, attrs: Any) -> Any:

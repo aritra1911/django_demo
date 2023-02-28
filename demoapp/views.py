@@ -71,5 +71,13 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer: BaseSerializer) -> None:
-        serializer.validated_data['customer'] = self.request.user
-        serializer.save(customer=self.request.user)
+        customer = self.request.user
+
+        serializer.validated_data['customer'] = customer
+        serializer.validated_data['is_active'] = True
+
+        # Disable is_active for all other accounts of the customer
+        accounts = CustomerBankAccount.objects.filter(customer=customer)
+        accounts.update(is_active=False)
+
+        serializer.save(customer=customer)
