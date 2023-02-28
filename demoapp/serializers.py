@@ -107,6 +107,9 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         Custom validator for checking if maximum accounts limit has been
         reached.
         """
+        # Do nothing if updating
+        if self.instance: return
+
         # Get the authenticated customer
         customer: Customer = self.context['request'].user
 
@@ -122,3 +125,15 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
     def validate(self, attrs: Any) -> Any:
         self.validate_account_limit()
         return super().validate(attrs)
+
+    def update(
+        self, instance: CustomerBankAccount, validated_data: Any
+    ) -> CustomerBankAccount:
+        """
+        Prevents update in case the account verification was approved.
+        """
+        if instance.verification_status == "approved":
+            raise exceptions.PermissionDenied(
+                detail="Sorry! Cannot update a verified bank account."
+            )
+        return super().update(instance, validated_data)
