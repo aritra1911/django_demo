@@ -14,13 +14,14 @@ class CustomerAdmin(admin.ModelAdmin):
 
 
 class BankAdmin(admin.ModelAdmin):
-    list_display = ('name', 'website', 'number', 'logo')
+    ordering = ('name',)
+    list_display = ('id', 'name', 'website', 'number', 'logo',)
 
 
 class CustomerBankAccountAdmin(admin.ModelAdmin):
     list_display = (
         'customer', 'bank', 'account_number', 'ifsc_code', 'is_cheque_verified',
-        'account_type',
+        'account_type', 'is_active',
     )
     list_filter = ('bank', 'is_cheque_verified', 'account_type',)
     search_fields = ('customer__email', 'bank__name', 'account_number',)

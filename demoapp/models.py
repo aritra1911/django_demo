@@ -96,17 +96,3 @@ class CustomerBankAccount(models.Model):
                 name='unique_bank_account'
             ),
         ]
-
-    def clean(self) -> None:
-        """
-        Get the current number of accounts associated with the customer
-        and throw ValidationError if it is greater than 4.
-        """
-        num_accounts: int = CustomerBankAccount.objects.filter(
-            customer=self.customer
-        ).count()
-        if num_accounts >= MAX_ACCOUNTS_PER_CUSTOMER:
-            raise ValidationError(
-                'A customer can have a maximum of 4 bank accounts.'
-            )
-        return super().clean()

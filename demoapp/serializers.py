@@ -1,9 +1,11 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
 from rest_framework import exceptions, serializers
 from demoapp.models import Customer, Bank, CustomerBankAccount
 from typing import Any
+
+
+MAX_ACCOUNTS_PER_CUSTOMER = 4
 
 
 class AuthEmailTokenSerializer(serializers.Serializer):
@@ -67,23 +69,56 @@ class BankSerializer(serializers.ModelSerializer):
 class CustomerBankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerBankAccount
-        fields = (
-            'id', 'account_number', 'ifsc_code', 'bank', 'cheque_image',
-            'branch_name', 'is_cheque_verified', 'name_as_per_bank_record',
-            'verification_mode', 'verification_status', 'account_type',
-            'is_active',
-        )
+        read_only_fields = ('customer',)
+        fields = '__all__'
+
+    def validate_customer(self, customer) -> Bank:
+        """
+        Check customer specified in request is same as the authenticated
+        customer.
+        """
+        # Get the authenticated customer
+        authenticated_customer = self.context['request'].user
+
+        # Check if it's the same customer
+        if customer.id != authenticated_customer.id:
+            raise serializers.ValidationError(
+                "Cannot create account as another customer"
+            )
+        return customer
+
+    def validate_bank(self, bank: Bank) -> Bank:
+        """
+        Check if the bank is unique for the customer
+        """
+        # Get the authenticated customer
+        customer: Customer = self.context['request'].user
+
+        if CustomerBankAccount.objects.filter(
+            customer=customer, bank=bank
+        ).exists():
+            raise serializers.ValidationError(
+                f"Customer already has an account in { bank }"
+            )
+        return bank
+
+    def validate_account_limit(self) -> None:
+        """
+        Custom validator for checking if maximum accounts limit has been
+        reached.
+        """
+        # Get the authenticated customer
+        customer: Customer = self.context['request'].user
+
+        num_accounts: int = CustomerBankAccount.objects.filter(
+            customer=customer
+        ).count()
+
+        if num_accounts >= MAX_ACCOUNTS_PER_CUSTOMER:
+            raise serializers.ValidationError(
+                "Maximum number of accounts limit reached!"
+            )
 
     def validate(self, attrs: Any) -> Any:
-        """
-        Manually trigger the clean() method of CustomerBankAccount model
-        instance to check if the custom validation is passed.
-        """
-        customer = self.context['request'].user
-        instance = CustomerBankAccount(customer=customer, **attrs)
-        try:
-            instance.clean()
-        # Note that this raises Django's ValidationError Exception
-        except ValidationError as e:
-            raise serializers.ValidationError(e.args[0])
+        self.validate_account_limit()
         return super().validate(attrs)
