@@ -1,3 +1,4 @@
+from django.db.models import QuerySet
 from rest_framework import (
     viewsets, mixins, authentication, parsers, renderers, permissions, status
 )
@@ -72,17 +73,46 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
             is_active=True
         )
 
-    def perform_create(self, serializer: BaseSerializer) -> None:
-        customer = self.request.user
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        customer = request.user
 
-        serializer.validated_data['customer'] = customer
-        serializer.validated_data['is_active'] = True
+        existing_accounts: QuerySet[CustomerBankAccount] = \
+            CustomerBankAccount.objects.filter(
+                customer=customer,
+                is_active=False,
+                ifsc_code=request.data['ifsc_code'],
+                account_number=request.data['account_number']
+            )
+
+        if existing_accounts.exists():
+            existing_account: CustomerBankAccount = existing_accounts.get()
+
+            # Deactivate the active account
+            CustomerBankAccount.objects.filter(
+                customer=customer, is_active=True
+            ).update(is_active=False)
+
+            # Activate the existing account
+            existing_account.is_active = True
+            existing_account.save()
+
+            serializer = self.get_serializer(existing_account)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer) -> None:
+        customer = self.request.user
 
         # Disable is_active for all other accounts of the customer
         accounts = CustomerBankAccount.objects.filter(customer=customer)
         accounts.update(is_active=False)
 
-        serializer.save(customer=customer)
+        serializer.save(customer=customer, is_active=True)
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return self.retrieve(request, *args, **kwargs)
