@@ -170,6 +170,13 @@ LOGGING = {
 }
 
 
+# Absolute filesystem path to the directory that will hold user-uploaded
+# files.
+# https://docs.djangoproject.com/en/4.1/ref/settings/#media-root
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 TIME_ZONE = 'UTC'
 
 USE_I18N = True

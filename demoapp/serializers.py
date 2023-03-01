@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
+from demo import settings
 from demoapp.models import Customer, Bank, CustomerBankAccount
 from typing import Any
 
@@ -137,3 +138,11 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
                 detail="Sorry! Cannot update a verified bank account."
             )
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance: CustomerBankAccount) -> Any:
+        representation: Any = super().to_representation(instance)
+        bank: Bank = instance.bank
+        logo = bank.logo
+        if logo:
+            representation['bank_logo'] = settings.MEDIA_ROOT + logo.url
+        return representation

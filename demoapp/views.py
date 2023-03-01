@@ -40,6 +40,7 @@ class CustomerViewSet(mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.ListModelMixin,
                       viewsets.GenericViewSet):
+
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     authentication_classes = (authentication.TokenAuthentication,)
