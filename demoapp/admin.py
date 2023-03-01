@@ -3,7 +3,7 @@ from django.http.request import HttpRequest
 from demoapp.models import Customer, Bank, CustomerBankAccount
 
 
-class ReadOnlyAdmin(admin.ModelAdmin):
+class ReadOnlyModelAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -15,7 +15,7 @@ class ReadOnlyAdmin(admin.ModelAdmin):
         return False
 
 
-class CustomerAdmin(ReadOnlyAdmin):
+class CustomerAdmin(ReadOnlyModelAdmin):
     ordering = ('email',)
     list_display = (
         'id', 'email', 'first_name', 'last_name', 'middle_name', 'pan_number',
@@ -26,15 +26,15 @@ class CustomerAdmin(ReadOnlyAdmin):
     )
 
 
-class BankAdmin(ReadOnlyAdmin):
+class BankAdmin(ReadOnlyModelAdmin):
     ordering = ('name',)
     list_display = ('id', 'name', 'website', 'number', 'logo',)
 
 
-class CustomerBankAccountAdmin(ReadOnlyAdmin):
+class CustomerBankAccountAdmin(ReadOnlyModelAdmin):
     list_display = (
-        'id', 'customer', 'bank', 'account_number', 'ifsc_code', 'is_cheque_verified',
-        'account_type', 'is_active',
+        'id', 'customer', 'bank', 'account_number', 'ifsc_code',
+        'is_cheque_verified', 'account_type', 'is_active',
     )
     list_filter = ('bank', 'is_cheque_verified', 'account_type',)
     search_fields = ('customer__email', 'bank__name', 'account_number',)
