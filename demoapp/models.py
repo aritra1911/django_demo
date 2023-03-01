@@ -12,7 +12,12 @@ class Customer(AbstractBaseUser, PermissionsMixin):
     first_name: models.CharField = models.CharField(max_length=30, blank=True)
     last_name: models.CharField = models.CharField(max_length=30, blank=True)
     middle_name: models.CharField = models.CharField(max_length=30, blank=True)
-    pan_number: models.CharField = models.CharField(max_length=10, blank=True)
+    pan_number: models.CharField = models.CharField(
+        max_length=10,
+        unique=True,
+        null=False,
+        blank=False
+    )
     is_active: models.BooleanField = models.BooleanField(default=True)
     is_staff: models.BooleanField = models.BooleanField(default=False)
 
