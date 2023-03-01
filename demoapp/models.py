@@ -4,9 +4,6 @@ from django.db import models
 from demoapp.managers import CustomerManager
 
 
-MAX_ACCOUNTS_PER_CUSTOMER = 4
-
-
 class Customer(AbstractBaseUser, PermissionsMixin):
     email: models.EmailField = models.EmailField(unique=True, blank=True)
     first_name: models.CharField = models.CharField(max_length=30, blank=True)
