@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 from rest_framework import exceptions, serializers
 from demo import settings
 from demoapp.models import Customer, Bank, CustomerBankAccount
@@ -38,6 +39,7 @@ class AuthEmailTokenSerializer(serializers.Serializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
+        read_only_fields = ('id',)
         fields = (
             'id', 'email', 'password', 'first_name', 'last_name', 'middle_name',
             'pan_number',
@@ -64,13 +66,14 @@ class CustomerSerializer(serializers.ModelSerializer):
 class BankSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bank
+        read_only_fields = ('id',)
         fields = '__all__'
 
 
 class CustomerBankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerBankAccount
-        read_only_fields = ('customer',)
+        read_only_fields = ('id', 'customer',)
         fields = '__all__'
 
     def validate_customer(self, customer) -> Bank:
@@ -95,9 +98,15 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         # Get the authenticated customer
         customer: Customer = self.context['request'].user
 
-        if CustomerBankAccount.objects.filter(
+        accounts = CustomerBankAccount.objects.filter(
             customer=customer, bank=bank
-        ).exists():
+        )
+
+        # Exclude checking the account while updating
+        if self.instance:
+            accounts = accounts.filter(~Q(id=self.instance.id)) # type: ignore
+
+        if accounts.exists():
             raise serializers.ValidationError(
                 f"Customer already has an account in { bank }"
             )

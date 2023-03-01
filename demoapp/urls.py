@@ -5,20 +5,17 @@ from demoapp import views
 router = routers.DefaultRouter()
 router.register(r'customers', views.CustomerViewSet, basename='customer')
 router.register(r'banks', views.BankViewSet, basename='bank')
-
-bank_detail = views.CustomerBankAccountViewSet.as_view({
-    'get': 'retrieve',
-    'post': 'create',
-    'put': 'update',
-    'patch': 'update',
-})
+router.register(
+    prefix=r'bank',
+    viewset=views.CustomerBankAccountViewSet,
+    basename='active-bank'
+)
 
 urlpatterns = (
     path('api/', include(router.urls), name='api_root'),
-    path('api/bank/', bank_detail, name='api_bank'),
     path(
         'api-token-auth/',
-        views.ObtainAuthTokenWithEmail.as_view(),
+        views.ObtainAuthTokenWithEmail.as_view(),   # type: ignore
         name='api_token_auth_with_email'
     ),
 )
