@@ -8,13 +8,13 @@ MAX_ACCOUNTS_PER_CUSTOMER = 4
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True, blank=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    middle_name = models.CharField(max_length=30, blank=True)
-    pan_number = models.CharField(max_length=10, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    email: models.EmailField = models.EmailField(unique=True, blank=True)
+    first_name: models.CharField = models.CharField(max_length=30, blank=True)
+    last_name: models.CharField = models.CharField(max_length=30, blank=True)
+    middle_name: models.CharField = models.CharField(max_length=30, blank=True)
+    pan_number: models.CharField = models.CharField(max_length=10, blank=True)
+    is_active: models.BooleanField = models.BooleanField(default=True)
+    is_staff: models.BooleanField = models.BooleanField(default=False)
 
     objects = CustomerManager()
 
@@ -32,9 +32,9 @@ class Customer(AbstractBaseUser, PermissionsMixin):
 
 
 class Bank(models.Model):
-    name = models.CharField(max_length=100)
-    website = models.URLField()
-    number = models.CharField(max_length=20)
+    name: models.CharField = models.CharField(max_length=100)
+    website: models.URLField = models.URLField()
+    number: models.CharField = models.CharField(max_length=20)
 
     # The `logo` field is an image field that stores the bank's logo in
     # a directory called 'bank_logos/' in the 'MEDIA_ROOT' directory
@@ -63,28 +63,60 @@ class CustomerBankAccount(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    account_number = models.CharField(max_length=100)
-    ifsc_code = models.CharField(max_length=11)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    account_number: models.CharField = models.CharField(
+        max_length=100,
+        null=False,
+        blank=False
+    )
+    ifsc_code: models.CharField = models.CharField(
+        max_length=11,
+        null=False,
+        blank=False
+    )
+    customer: models.ForeignKey = models.ForeignKey(
+        to=Customer,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False
+    )
+    bank: models.ForeignKey = models.ForeignKey(
+        to=Bank,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False
+    )
     cheque_image = models.ImageField(
         upload_to='cheque_images/', null=True, blank=True
     )
-    branch_name = models.CharField(max_length=100, blank=True)
-    is_cheque_verified = models.BooleanField(default=False)
-    name_as_per_bank_record = models.CharField(
-        max_length=100, null=True, blank=True
+    branch_name: models.CharField = models.CharField(
+        max_length=100,
+        null=False,
+        blank=False
     )
-    verification_mode = models.CharField(
-        max_length=20, choices=VERIFICATION_MODES, default='manual'
+    is_cheque_verified: models.BooleanField = models.BooleanField(default=False)
+    name_as_per_bank_record: models.CharField = models.CharField(
+        max_length=100,
+        null=False,
+        blank=False
     )
-    verification_status = models.CharField(
-        max_length=20, choices=VERIFICATION_STATUSES, default='pending'
+    verification_mode: models.CharField = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_MODES,
+        default='manual'
     )
-    account_type = models.CharField(
-        max_length=20, choices=ACCOUNT_TYPES, default='savings'
+    verification_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_STATUSES,
+        default='pending'
     )
-    is_active = models.BooleanField(default=False)
+    account_type: models.CharField = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_TYPES,
+        default='savings',
+        null=False,
+        blank=False
+    )
+    is_active: models.BooleanField = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'CustomerBankAccounts'
