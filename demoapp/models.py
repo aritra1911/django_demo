@@ -5,16 +5,13 @@ from demoapp.managers import CustomerManager
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
-    email: models.EmailField = models.EmailField(unique=True, blank=True)
-    first_name: models.CharField = models.CharField(max_length=30, blank=True)
-    last_name: models.CharField = models.CharField(max_length=30, blank=True)
-    middle_name: models.CharField = models.CharField(max_length=30, blank=True)
-    pan_number: models.CharField = models.CharField(
-        max_length=10,
-        unique=True,
-        null=False,
-        blank=False
+    email: models.EmailField = models.EmailField(unique=True)
+    first_name: models.CharField = models.CharField(max_length=30)
+    last_name: models.CharField = models.CharField(max_length=30)
+    middle_name: models.CharField = models.CharField(
+        max_length=30, null=True, blank=True
     )
+    pan_number: models.CharField = models.CharField(max_length=10, unique=True)
     is_active: models.BooleanField = models.BooleanField(default=True)
     is_staff: models.BooleanField = models.BooleanField(default=False)
 
@@ -65,58 +62,26 @@ class CustomerBankAccount(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    account_number: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
-    ifsc_code: models.CharField = models.CharField(
-        max_length=11,
-        null=False,
-        blank=False
-    )
+    account_number: models.CharField = models.CharField(max_length=100)
+    ifsc_code: models.CharField = models.CharField(max_length=11)
     customer: models.ForeignKey = models.ForeignKey(
-        to=Customer,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False
+        Customer, on_delete=models.CASCADE
     )
-    bank: models.ForeignKey = models.ForeignKey(
-        to=Bank,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False
-    )
+    bank: models.ForeignKey = models.ForeignKey(Bank, on_delete=models.CASCADE)
     cheque_image = models.ImageField(
         upload_to='cheque_images/', null=True, blank=True
     )
-    branch_name: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
+    branch_name: models.CharField = models.CharField(max_length=100)
     is_cheque_verified: models.BooleanField = models.BooleanField(default=False)
-    name_as_per_bank_record: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
+    name_as_per_bank_record: models.CharField = models.CharField(max_length=100)
     verification_mode: models.CharField = models.CharField(
-        max_length=20,
-        choices=VERIFICATION_MODES,
-        default='manual'
+        max_length=20, choices=VERIFICATION_MODES, default='manual'
     )
     verification_status: models.CharField = models.CharField(
-        max_length=20,
-        choices=VERIFICATION_STATUSES,
-        default='pending'
+        max_length=20, choices=VERIFICATION_STATUSES, default='pending'
     )
     account_type: models.CharField = models.CharField(
-        max_length=20,
-        choices=ACCOUNT_TYPES,
-        default='savings',
-        null=False,
-        blank=False
+        max_length=20, choices=ACCOUNT_TYPES, default='savings'
     )
     is_active: models.BooleanField = models.BooleanField(default=False)
 
