@@ -170,6 +170,9 @@ LOGGING = {
 }
 
 
+MAX_ACCOUNTS_PER_CUSTOMER = 4
+
+
 # Absolute filesystem path to the directory that will hold user-uploaded
 # files.
 # https://docs.djangoproject.com/en/4.1/ref/settings/#media-root

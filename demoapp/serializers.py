@@ -7,9 +7,6 @@ from demoapp.models import Customer, Bank, CustomerBankAccount
 from typing import Any
 
 
-MAX_ACCOUNTS_PER_CUSTOMER = 4
-
-
 class AuthEmailTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField()
@@ -127,7 +124,7 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
             customer=customer
         ).count()
 
-        if num_accounts >= MAX_ACCOUNTS_PER_CUSTOMER:
+        if num_accounts >= settings.MAX_ACCOUNTS_PER_CUSTOMER:
             raise serializers.ValidationError(
                 "Maximum number of accounts limit reached!"
             )
