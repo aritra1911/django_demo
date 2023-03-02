@@ -5,10 +5,25 @@ from demoapp.managers import CustomerManager
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
-    email: models.EmailField = models.EmailField(unique=True, blank=True)
-    first_name: models.CharField = models.CharField(max_length=30, blank=True)
-    last_name: models.CharField = models.CharField(max_length=30, blank=True)
-    middle_name: models.CharField = models.CharField(max_length=30, blank=True)
+    email: models.EmailField = models.EmailField(
+        unique=True,
+        blank=False
+    )
+    first_name: models.CharField = models.CharField(
+        max_length=30,
+        null=False,
+        blank=False
+    )
+    last_name: models.CharField = models.CharField(
+        max_length=30,
+        null=False,
+        blank=False
+    )
+    middle_name: models.CharField = models.CharField(
+        max_length=30,
+        null=True,
+        blank=True
+    )
     pan_number: models.CharField = models.CharField(
         max_length=10,
         unique=True,

@@ -89,7 +89,8 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
 
             # Deactivate the active account
             CustomerBankAccount.objects.filter(
-                customer=customer, is_active=True
+                customer=customer,
+                is_active=True
             ).update(is_active=False)
 
             # Activate the existing account
