@@ -73,42 +73,6 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'customer',)
         fields = '__all__'
 
-    def validate_customer(self, customer) -> Bank:
-        """
-        Check customer specified in request is same as the authenticated
-        customer.
-        """
-        # Get the authenticated customer
-        authenticated_customer = self.context['request'].user
-
-        # Check if it's the same customer
-        if customer.id != authenticated_customer.id:
-            raise serializers.ValidationError(
-                "Cannot create account as another customer"
-            )
-        return customer
-
-    def validate_bank(self, bank: Bank) -> Bank:
-        """
-        Check if the bank is unique for the customer
-        """
-        # Get the authenticated customer
-        customer: Customer = self.context['request'].user
-
-        accounts = CustomerBankAccount.objects.filter(
-            customer=customer, bank=bank
-        )
-
-        # Exclude checking the account while updating
-        if self.instance:
-            accounts = accounts.filter(~Q(id=self.instance.id)) # type: ignore
-
-        if accounts.exists():
-            raise serializers.ValidationError(
-                f"Customer already has an account in { bank }"
-            )
-        return bank
-
     def validate_account_limit(self) -> None:
         """
         Custom validator for checking if maximum accounts limit has been
