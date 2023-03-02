@@ -1,10 +1,10 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
+from django.db.models import QuerySet
 from rest_framework import exceptions, serializers
 from demo import settings
 from demoapp.models import Customer, Bank, CustomerBankAccount
-from typing import Any
+from typing import Any, Dict
 
 
 class AuthEmailTokenSerializer(serializers.Serializer):
@@ -73,6 +73,34 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'customer',)
         fields = '__all__'
 
+    def validate_unique_account(
+        self, ifsc_code: str, account_number: str
+    ) -> None:
+        """
+        Custom validator to check whether new IFSC code and Account
+        Number pair is unique.
+
+        During update operation, the IFSC code and Account Number must
+        not have been modified.
+        """
+        if self.instance:
+            instance: CustomerBankAccount = self.instance   # type: ignore
+            if ifsc_code != instance.ifsc_code or \
+               account_number != instance.account_number:
+                raise serializers.ValidationError(
+                    "You cannot modify IFSC Code and Account Number for an "
+                    "active account."
+                )
+            return
+
+        if CustomerBankAccount.objects.filter(
+            ifsc_code=ifsc_code,
+            account_number=account_number
+        ):
+            raise serializers.ValidationError(
+                "Account already exists!"
+            )
+
     def validate_account_limit(self) -> None:
         """
         Custom validator for checking if maximum accounts limit has been
@@ -93,8 +121,12 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
                 "Maximum number of accounts limit reached!"
             )
 
-    def validate(self, attrs: Any) -> Any:
+    def validate(self, attrs: Dict[str, Any]) -> Any:
         self.validate_account_limit()
+        self.validate_unique_account(
+            ifsc_code=attrs['ifsc_code'],
+            account_number=attrs['account_number']
+        )
         return super().validate(attrs)
 
     def update(

@@ -122,11 +122,10 @@ class CustomerBankAccount(models.Model):
 
     class Meta:
         verbose_name_plural = 'CustomerBankAccounts'
-        unique_together = ('ifsc_code', 'account_number')
         ordering = ('id',)
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['account_number', 'ifsc_code'],
+                fields=('account_number', 'ifsc_code'),
                 name='unique_bank_account'
             ),
-        ]
+        )
