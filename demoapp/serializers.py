@@ -1,6 +1,5 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-from django.db.models import QuerySet
 from rest_framework import exceptions, serializers
 from demo import settings
 from demoapp.models import Customer, Bank, CustomerBankAccount

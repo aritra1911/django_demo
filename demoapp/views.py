@@ -1,4 +1,4 @@
-from django.db.models import QuerySet
+from django.db import OperationalError
 from rest_framework import (
     viewsets, mixins, authentication, parsers, renderers, permissions, status
 )
@@ -29,13 +29,19 @@ class ObtainAuthTokenWithEmail(APIView):
 
     renderer_classes = (renderers.JSONRenderer,)
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = AuthEmailTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
+        try:
+            token, created = Token.objects.get_or_create(user=user)
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to fetch token "
+                            f"for customer: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'token': token.key})
+        return Response({ 'token': token.key })
 
 
 class CustomerViewSet(mixins.CreateModelMixin,
@@ -78,24 +84,48 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
         # Check if it is possible to fetch an existing inactive account
         # of the customer with the same ifsc_code and account_number of
         # the new account being created.
-        existing_account: Optional[CustomerBankAccount] = \
-            CustomerBankAccount.get_existing_account(
-                customer=customer,
-                ifsc_code=request.data['ifsc_code'],
-                account_number=request.data['account_number']
-            )
+        try:
+            existing_account: Optional[CustomerBankAccount] = \
+                CustomerBankAccount.get_existing_account(
+                    customer=customer,
+                    ifsc_code=request.data['ifsc_code'],
+                    account_number=request.data['account_number']
+                )
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to get existing "
+                            f"accounts: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if existing_account:
             # If we found such an account, turn it into the active
             # account instead of creating a new one.
-            CustomerBankAccount.deactivate_active_account(customer)
-            existing_account.activate()
+            try:
+                CustomerBankAccount.deactivate_active_account(customer)
+            except OperationalError as oe:
+                return Response(data={
+                    "message": (f"An error occurred while trying to deactivate "
+                                f"the active account: { str(oe) }")
+                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                existing_account.activate()
+            except OperationalError as oe:
+                return Response(data={
+                    "message": (f"An error occurred while trying to activate "
+                                f"the existing account: { str(oe) }")
+                }, status=status.HTTP_400_BAD_REQUEST)
             serializer = self.get_serializer(existing_account)
         else:
             # Create new account
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            try:
+                self.perform_create(serializer)
+            except OperationalError as oe:
+                return Response(data={
+                    "message": (f"An error occurred while trying to create "
+                                f"account: { str(oe) }")
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -114,8 +144,21 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
                 'You cannot fetch an arbitrary account here.'
             )}, status=status.HTTP_404_NOT_FOUND)
 
-        active_account: CustomerBankAccount = self.get_object()
-        return Response(self.get_serializer(active_account).data)
+        try:
+            active_account: CustomerBankAccount = self.get_object()
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to retrieve "
+                            f"account details: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            return Response(self.get_serializer(active_account).data)
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to serialize "
+                            f"account details: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         if kwargs.get('pk'):
@@ -124,14 +167,28 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
                 'You cannot update any arbitrary account.'
             )}, status=status.HTTP_404_NOT_FOUND)
 
-        active_account = self.get_object()
+        try:
+            active_account = self.get_object()
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to fetch active "
+                            f"account: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(
             active_account,
             data=request.data,
             partial=True
         )
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+
+        try:
+            self.perform_update(serializer)
+        except OperationalError as oe:
+            return Response(data={
+                "message": (f"An error occurred while trying to update details "
+                            f"of active account: { str(oe) }")
+            }, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data)
 
     def put(self, request, *args, **kwargs) -> Response:
