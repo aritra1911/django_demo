@@ -93,13 +93,8 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
                 )
             return
 
-        if CustomerBankAccount.objects.filter(
-            ifsc_code=ifsc_code,
-            account_number=account_number
-        ):
-            raise serializers.ValidationError(
-                "Account already exists!"
-            )
+        if CustomerBankAccount.get_account(ifsc_code, account_number):
+            raise serializers.ValidationError("Account already exists!")
 
     def validate_account_limit(self) -> None:
         """
@@ -107,15 +102,12 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         reached.
         """
         # Do nothing if updating
-        if self.instance: return
+        if self.instance:
+            return
 
-        # Get the authenticated customer
+        # Check if we reached the max accounts limit
         customer: Customer = self.context['request'].user
-
-        num_accounts: int = CustomerBankAccount.objects.filter(
-            customer=customer
-        ).count()
-
+        num_accounts: int = CustomerBankAccount.get_accounts_count(customer)
         if num_accounts >= settings.MAX_ACCOUNTS_PER_CUSTOMER:
             raise serializers.ValidationError(
                 "Maximum number of accounts limit reached!"

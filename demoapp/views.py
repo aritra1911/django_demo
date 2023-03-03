@@ -14,7 +14,7 @@ from demoapp.serializers import (
     BankSerializer,
     CustomerBankAccountSerializer,
 )
-from typing import Any
+from typing import Any, Final, Optional
 from demoapp.permissions import IsCustomerAuthenticated
 
 
@@ -51,8 +51,9 @@ class CustomerViewSet(mixins.CreateModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if not self.request.user.is_superuser:  # type: ignore
-            queryset = queryset.filter(id=self.request.user.id) # type: ignore
+        customer: Customer = self.request.user                  # type: ignore
+        if not customer.is_superuser:
+            queryset = Customer.get_queryset_by_id(customer.id) # type: ignore
         return queryset
 
 
@@ -68,50 +69,39 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self) -> CustomerBankAccount:
-        return CustomerBankAccount.objects.get(
-            customer=self.request.user,
-            is_active=True
-        )
+        customer: Customer = self.request.user                  # type: ignore
+        return CustomerBankAccount.get_active_account(customer)
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        customer = request.user
+        customer: Customer = request.user                       # type: ignore
 
-        existing_accounts: QuerySet[CustomerBankAccount] = \
-            CustomerBankAccount.objects.filter(
+        # Check if it is possible to fetch an existing inactive account
+        # of the customer with the same ifsc_code and account_number of
+        # the new account being created.
+        existing_account: Optional[CustomerBankAccount] = \
+            CustomerBankAccount.get_existing_account(
                 customer=customer,
-                is_active=False,
                 ifsc_code=request.data['ifsc_code'],
                 account_number=request.data['account_number']
             )
 
-        if existing_accounts.exists():
-            existing_account: CustomerBankAccount = existing_accounts.get()
-
-            # Deactivate the active account
-            CustomerBankAccount.objects.filter(
-                customer=customer, is_active=True
-            ).update(is_active=False)
-
-            # Activate the existing account
-            existing_account.is_active = True
-            existing_account.save()
-
+        if existing_account:
+            # If we found such an account, turn it into the active
+            # account instead of creating a new one.
+            CustomerBankAccount.deactivate_active_account(customer)
+            existing_account.activate()
             serializer = self.get_serializer(existing_account)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        else:
+            # Create new account
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer) -> None:
-        customer = self.request.user
-
-        # Disable is_active for all other accounts of the customer
-        accounts = CustomerBankAccount.objects.filter(customer=customer)
-        accounts.update(is_active=False)
-
+        customer: Customer = self.request.user                  # type: ignore
+        CustomerBankAccount.deactivate_active_account(customer)
         serializer.save(customer=customer, is_active=True)
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:

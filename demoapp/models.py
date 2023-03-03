@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from demoapp.managers import CustomerManager
+from typing import Optional, Type
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
@@ -28,6 +29,14 @@ class Customer(AbstractBaseUser, PermissionsMixin):
         if self.middle_name:
             return f'{self.first_name} {self.middle_name} {self.last_name}'
         return f'{self.first_name} {self.last_name}'
+
+    @classmethod
+    def get_queryset_by_id(
+        cls: Type["Customer"],
+        id: int
+    ) -> Optional[models.QuerySet["Customer"]]:
+        queryset = cls.objects.filter(id=id)
+        return queryset if queryset else None
 
 
 class Bank(models.Model):
@@ -94,3 +103,62 @@ class CustomerBankAccount(models.Model):
                 name='unique_bank_account'
             ),
         )
+
+    @classmethod
+    def get_account(
+        cls: Type["CustomerBankAccount"],
+        ifsc_code: str,
+        account_number: str
+    ) -> Optional["CustomerBankAccount"]:
+        accounts: models.QuerySet[CustomerBankAccount] = cls.objects.filter(
+            ifsc_code=ifsc_code,
+            account_number=account_number,
+            is_active=False
+        )
+        if accounts:
+            return accounts.get()
+        return None
+
+    @classmethod
+    def get_accounts_count(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> int:
+        return cls.objects.filter(customer=customer).count()
+
+    @classmethod
+    def get_active_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> "CustomerBankAccount":
+        return cls.objects.get(customer=customer, is_active=True)
+
+    @classmethod
+    def get_existing_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer,
+        ifsc_code: str,
+        account_number: str
+    ) -> Optional["CustomerBankAccount"]:
+        existing_accounts: models.QuerySet[CustomerBankAccount] = \
+            cls.objects.filter(
+                customer=customer,
+                ifsc_code=ifsc_code,
+                account_number=account_number,
+                is_active=False
+            )
+        return existing_accounts.get() if existing_accounts else None
+
+    @classmethod
+    def deactivate_active_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> None:
+        cls.objects.filter(
+            customer=customer,
+            is_active=True
+        ).update(is_active=False)
+
+    def activate(self: "CustomerBankAccount") -> None:
+        self.is_active = True
+        self.save()
