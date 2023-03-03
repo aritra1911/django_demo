@@ -112,8 +112,7 @@ class CustomerBankAccount(models.Model):
     ) -> Optional["CustomerBankAccount"]:
         accounts: models.QuerySet[CustomerBankAccount] = cls.objects.filter(
             ifsc_code=ifsc_code,
-            account_number=account_number,
-            is_active=False
+            account_number=account_number
         )
         if accounts:
             return accounts.get()
@@ -161,4 +160,4 @@ class CustomerBankAccount(models.Model):
 
     def activate(self: "CustomerBankAccount") -> None:
         self.is_active = True
-        self.save()
+        self.save(update_fields=("is_active",))
