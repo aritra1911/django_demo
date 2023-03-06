@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from rest_framework import exceptions, serializers
 from demoapp.models import Customer, Bank, CustomerBankAccount
 from typing import Any, Dict
@@ -71,9 +72,7 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'customer',)
         fields = '__all__'
 
-    def validate_unique_account(
-        self, ifsc_code: str, account_number: str
-    ) -> None:
+    def validate_unique_account(self) -> None:
         """
         Custom validator to check whether new IFSC code and Account
         Number pair is unique.
@@ -83,6 +82,10 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         """
         if self.instance:
             instance: CustomerBankAccount = self.instance   # type: ignore
+            ifsc_code: str = \
+                self.initial_data.get('ifsc_code', instance.ifsc_code)
+            account_number: str = \
+                self.initial_data.get('account_number', instance.account_number)
             if ifsc_code != instance.ifsc_code or \
                account_number != instance.account_number:
                 raise serializers.ValidationError(
@@ -91,7 +94,10 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
                 )
             return
 
-        if CustomerBankAccount.get_account(ifsc_code, account_number):
+        if CustomerBankAccount.get_account(
+            ifsc_code=self.initial_data['ifsc_code'],
+            account_number=self.initial_data['account_number']
+        ):
             raise serializers.ValidationError("Account already exists!")
 
     def validate_account_limit(self) -> None:
@@ -113,10 +119,7 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: Dict[str, Any]) -> Any:
         self.validate_account_limit()
-        self.validate_unique_account(
-            ifsc_code=attrs['ifsc_code'],
-            account_number=attrs['account_number']
-        )
+        self.validate_unique_account()
         return super().validate(attrs)
 
     def update(
