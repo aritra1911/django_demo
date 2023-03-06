@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework.apps.RestFrameworkConfig',
-    #'rest_framework.authtoken.apps.AuthTokenConfig',
     'rest_framework.authtoken',
     'demoapp.apps.DemoappConfig',
 ]
@@ -170,11 +169,20 @@ LOGGING = {
 }
 
 
+MAX_ACCOUNTS_PER_CUSTOMER = 4
+
+
 # Absolute filesystem path to the directory that will hold user-uploaded
 # files.
 # https://docs.djangoproject.com/en/4.1/ref/settings/#media-root
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+# URL that handles the media served from MEDIA_ROOT
+# https://docs.djangoproject.com/en/4.1/ref/settings/#media-url
+
+MEDIA_URL = "/media/"
 
 
 TIME_ZONE = 'UTC'
