@@ -177,6 +177,12 @@ LOGGING = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
+# URL that handles the media served from MEDIA_ROOT
+# https://docs.djangoproject.com/en/4.1/ref/settings/#media-url
+
+MEDIA_URL = "/media/"
+
+
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
