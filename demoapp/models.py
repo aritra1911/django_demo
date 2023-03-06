@@ -2,19 +2,17 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from demoapp.managers import CustomerManager
+from typing import Optional, Type
 
 
 class Customer(AbstractBaseUser, PermissionsMixin):
-    email: models.EmailField = models.EmailField(unique=True, blank=True)
-    first_name: models.CharField = models.CharField(max_length=30, blank=True)
-    last_name: models.CharField = models.CharField(max_length=30, blank=True)
-    middle_name: models.CharField = models.CharField(max_length=30, blank=True)
-    pan_number: models.CharField = models.CharField(
-        max_length=10,
-        unique=True,
-        null=False,
-        blank=False
+    email: models.EmailField = models.EmailField(unique=True)
+    first_name: models.CharField = models.CharField(max_length=30)
+    last_name: models.CharField = models.CharField(max_length=30)
+    middle_name: models.CharField = models.CharField(
+        max_length=30, null=True, blank=True
     )
+    pan_number: models.CharField = models.CharField(max_length=10, unique=True)
     is_active: models.BooleanField = models.BooleanField(default=True)
     is_staff: models.BooleanField = models.BooleanField(default=False)
 
@@ -31,6 +29,14 @@ class Customer(AbstractBaseUser, PermissionsMixin):
         if self.middle_name:
             return f'{self.first_name} {self.middle_name} {self.last_name}'
         return f'{self.first_name} {self.last_name}'
+
+    @classmethod
+    def get_queryset_by_id(
+        cls: Type["Customer"],
+        id: int
+    ) -> Optional[models.QuerySet["Customer"]]:
+        queryset = cls.objects.filter(id=id)
+        return queryset if queryset else None
 
 
 class Bank(models.Model):
@@ -65,68 +71,93 @@ class CustomerBankAccount(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    account_number: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
-    ifsc_code: models.CharField = models.CharField(
-        max_length=11,
-        null=False,
-        blank=False
-    )
+    account_number: models.CharField = models.CharField(max_length=100)
+    ifsc_code: models.CharField = models.CharField(max_length=11)
     customer: models.ForeignKey = models.ForeignKey(
-        to=Customer,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False
+        Customer, on_delete=models.CASCADE
     )
-    bank: models.ForeignKey = models.ForeignKey(
-        to=Bank,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False
-    )
+    bank: models.ForeignKey = models.ForeignKey(Bank, on_delete=models.CASCADE)
     cheque_image = models.ImageField(
         upload_to='cheque_images/', null=True, blank=True
     )
-    branch_name: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
+    branch_name: models.CharField = models.CharField(max_length=100)
     is_cheque_verified: models.BooleanField = models.BooleanField(default=False)
-    name_as_per_bank_record: models.CharField = models.CharField(
-        max_length=100,
-        null=False,
-        blank=False
-    )
+    name_as_per_bank_record: models.CharField = models.CharField(max_length=100)
     verification_mode: models.CharField = models.CharField(
-        max_length=20,
-        choices=VERIFICATION_MODES,
-        default='manual'
+        max_length=20, choices=VERIFICATION_MODES, default='manual'
     )
     verification_status: models.CharField = models.CharField(
-        max_length=20,
-        choices=VERIFICATION_STATUSES,
-        default='pending'
+        max_length=20, choices=VERIFICATION_STATUSES, default='pending'
     )
     account_type: models.CharField = models.CharField(
-        max_length=20,
-        choices=ACCOUNT_TYPES,
-        default='savings',
-        null=False,
-        blank=False
+        max_length=20, choices=ACCOUNT_TYPES, default='savings'
     )
     is_active: models.BooleanField = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'CustomerBankAccounts'
-        unique_together = ('ifsc_code', 'account_number')
         ordering = ('id',)
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['account_number', 'ifsc_code'],
+                fields=('account_number', 'ifsc_code'),
                 name='unique_bank_account'
             ),
-        ]
+        )
+
+    @classmethod
+    def get_account(
+        cls: Type["CustomerBankAccount"],
+        ifsc_code: str,
+        account_number: str
+    ) -> Optional["CustomerBankAccount"]:
+        accounts: models.QuerySet[CustomerBankAccount] = cls.objects.filter(
+            ifsc_code=ifsc_code,
+            account_number=account_number
+        )
+        if accounts:
+            return accounts.get()
+        return None
+
+    @classmethod
+    def get_accounts_count(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> int:
+        return cls.objects.filter(customer=customer).count()
+
+    @classmethod
+    def get_active_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> "CustomerBankAccount":
+        return cls.objects.get(customer=customer, is_active=True)
+
+    @classmethod
+    def get_existing_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer,
+        ifsc_code: str,
+        account_number: str
+    ) -> Optional["CustomerBankAccount"]:
+        existing_accounts: models.QuerySet[CustomerBankAccount] = \
+            cls.objects.filter(
+                customer=customer,
+                ifsc_code=ifsc_code,
+                account_number=account_number,
+                is_active=False
+            )
+        return existing_accounts.get() if existing_accounts else None
+
+    @classmethod
+    def deactivate_active_account(
+        cls: Type["CustomerBankAccount"],
+        customer: Customer
+    ) -> None:
+        cls.objects.filter(
+            customer=customer,
+            is_active=True
+        ).update(is_active=False)
+
+    def activate(self: "CustomerBankAccount") -> None:
+        self.is_active = True
+        self.save(update_fields=("is_active",))

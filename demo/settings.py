@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework.apps.RestFrameworkConfig',
-    #'rest_framework.authtoken.apps.AuthTokenConfig',
     'rest_framework.authtoken',
     'demoapp.apps.DemoappConfig',
 ]
@@ -168,6 +167,9 @@ LOGGING = {
         },
     },
 }
+
+
+MAX_ACCOUNTS_PER_CUSTOMER = 4
 
 
 # Absolute filesystem path to the directory that will hold user-uploaded

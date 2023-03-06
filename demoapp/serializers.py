@@ -1,12 +1,8 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
 from rest_framework import exceptions, serializers
 from demoapp.models import Customer, Bank, CustomerBankAccount
-from typing import Any
-
-
-MAX_ACCOUNTS_PER_CUSTOMER = 4
+from typing import Any, Dict
 
 
 class AuthEmailTokenSerializer(serializers.Serializer):
@@ -75,41 +71,28 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'customer',)
         fields = '__all__'
 
-    def validate_customer(self, customer) -> Bank:
+    def validate_unique_account(
+        self, ifsc_code: str, account_number: str
+    ) -> None:
         """
-        Check customer specified in request is same as the authenticated
-        customer.
+        Custom validator to check whether new IFSC code and Account
+        Number pair is unique.
+
+        During update operation, the IFSC code and Account Number must
+        not have been modified.
         """
-        # Get the authenticated customer
-        authenticated_customer = self.context['request'].user
-
-        # Check if it's the same customer
-        if customer.id != authenticated_customer.id:
-            raise serializers.ValidationError(
-                "Cannot create account as another customer"
-            )
-        return customer
-
-    def validate_bank(self, bank: Bank) -> Bank:
-        """
-        Check if the bank is unique for the customer
-        """
-        # Get the authenticated customer
-        customer: Customer = self.context['request'].user
-
-        accounts = CustomerBankAccount.objects.filter(
-            customer=customer, bank=bank
-        )
-
-        # Exclude checking the account while updating
         if self.instance:
-            accounts = accounts.filter(~Q(id=self.instance.id)) # type: ignore
+            instance: CustomerBankAccount = self.instance   # type: ignore
+            if ifsc_code != instance.ifsc_code or \
+               account_number != instance.account_number:
+                raise serializers.ValidationError(
+                    "You cannot modify IFSC Code and Account Number for an "
+                    "active account."
+                )
+            return
 
-        if accounts.exists():
-            raise serializers.ValidationError(
-                f"Customer already has an account in { bank }"
-            )
-        return bank
+        if CustomerBankAccount.get_account(ifsc_code, account_number):
+            raise serializers.ValidationError("Account already exists!")
 
     def validate_account_limit(self) -> None:
         """
@@ -117,22 +100,23 @@ class CustomerBankAccountSerializer(serializers.ModelSerializer):
         reached.
         """
         # Do nothing if updating
-        if self.instance: return
+        if self.instance:
+            return
 
-        # Get the authenticated customer
+        # Check if we reached the max accounts limit
         customer: Customer = self.context['request'].user
-
-        num_accounts: int = CustomerBankAccount.objects.filter(
-            customer=customer
-        ).count()
-
-        if num_accounts >= MAX_ACCOUNTS_PER_CUSTOMER:
+        num_accounts: int = CustomerBankAccount.get_accounts_count(customer)
+        if num_accounts >= settings.MAX_ACCOUNTS_PER_CUSTOMER:
             raise serializers.ValidationError(
                 "Maximum number of accounts limit reached!"
             )
 
-    def validate(self, attrs: Any) -> Any:
+    def validate(self, attrs: Dict[str, Any]) -> Any:
         self.validate_account_limit()
+        self.validate_unique_account(
+            ifsc_code=attrs['ifsc_code'],
+            account_number=attrs['account_number']
+        )
         return super().validate(attrs)
 
     def update(
