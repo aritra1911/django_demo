@@ -6,7 +6,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
-from rest_framework.serializers import BaseSerializer
 from demoapp.models import Customer, Bank, CustomerBankAccount
 from demoapp.serializers import (
     AuthEmailTokenSerializer,
@@ -14,7 +13,7 @@ from demoapp.serializers import (
     BankSerializer,
     CustomerBankAccountSerializer,
 )
-from typing import Any, Final, Optional
+from typing import Any, Optional
 from demoapp.permissions import IsCustomerAuthenticated
 
 

@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework.apps.RestFrameworkConfig',
     'rest_framework.authtoken',
     'demoapp.apps.DemoappConfig',
+    'kbapp.apps.KbappConfig',
+    'kbapp.mutual_funds.apps.MutualFundsConfig',
 ]
 
 MIDDLEWARE = [
