@@ -5,10 +5,10 @@ class BaseModel(models.Model):
     created: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     modified: models.DateTimeField = models.DateTimeField(auto_now=True)
     is_active: models.BooleanField = models.BooleanField(default=True)
-    modified_by:models.CharField = models.CharField(
+    modified_by: models.CharField = models.CharField(
         max_length=250, null=True, blank=True
     )
-    created_by:models.CharField = models.CharField(
+    created_by: models.CharField = models.CharField(
         max_length=250, null=True, blank=True
     )
 
@@ -51,7 +51,8 @@ class AMC(BaseModel):
         null=True, blank=True
     )
     rta_amc_code: models.CharField = models.CharField(
-        max_length=64, null=True, blank=True)
+        max_length=64, null=True, blank=True
+    )
     is_isip_available: models.BooleanField = models.BooleanField(default=False)
     cio: models.CharField = models.CharField(
         max_length=150, null=True, blank=True
