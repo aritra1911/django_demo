@@ -1,6 +1,6 @@
 import json
+from tqdm import tqdm
 from django.core.management.base import BaseCommand
-from django.apps import apps
 from django.db.models import Model
 from django.db.utils import IntegrityError
 from kbapp.models import AMCFund
@@ -37,11 +37,10 @@ class Command(BaseCommand):
     def insert_master_data(self, master_data: Any) -> None:
         num_funds: int = len(master_data['funds'])
         updated: int = 0
-        inserted: int = 0
 
-        for index, fund_data in enumerate(master_data['funds']):
-            self.stdout.write(f'Inserting Funds : {index+1}/{num_funds}')
-
+        self.stdout.write('Preparing to insert data into AMCFund')
+        pbar: tqdm = tqdm(ascii=False, desc='Inserting Funds', total=num_funds)
+        for fund_data in master_data['funds']:
             field_data: Dict[str, str] = {
                 'fund_category': fund_data['category'],
                 'fund_type': fund_data['category'],
@@ -57,8 +56,11 @@ class Command(BaseCommand):
             if not fund:    # got created, i.e. it got updated
                 updated += 1
 
-        self.stdout.write('-----------------------')
+            pbar.update(1)
+
+        pbar.close()
+        self.stdout.write('----------------------')
         self.stdout.write(
-            msg=f'updated : { updated }\ninserted : { num_funds - updated }',
+            msg=f'inserted : { num_funds - updated }\nupdated : { updated }',
             style_func=self.style.SUCCESS
         )
