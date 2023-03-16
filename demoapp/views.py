@@ -178,13 +178,13 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Override serializer data with data from client-side cookie
-        data['bank_name'] = self.request.COOKIES['bank_name']
-        data['customer_first_name'] = self.request.COOKIES['customer_first_name']
-        data['customer_last_name'] = self.request.COOKIES['customer_last_name']
-        data['customer_email_address'] = self.request.COOKIES['customer_email_address']
-        data['branch_name'] = self.request.COOKIES['branch_name']
-        data['created_by'] = self.request.COOKIES['created_by']
-        data['name_as_per_bank_record'] = self.request.COOKIES['name_as_per_bank_record']
+        data['bank_name'] = self.request.COOKIES.get('bank_name', '')
+        data['customer_first_name'] = self.request.COOKIES.get('customer_first_name', '')
+        data['customer_last_name'] = self.request.COOKIES.get('customer_last_name', '')
+        data['customer_email_address'] = self.request.COOKIES.get('customer_email_address', '')
+        data['branch_name'] = self.request.COOKIES.get('branch_name', '')
+        data['created_by'] = self.request.COOKIES.get('created_by', '')
+        data['name_as_per_bank_record'] = self.request.COOKIES.get('name_as_per_bank_record', '')
 
         return Response(data)
 
