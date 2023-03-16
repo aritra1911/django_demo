@@ -14,7 +14,7 @@ from demoapp.serializers import (
     BankSerializer,
     CustomerBankAccountSerializer,
 )
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from demoapp.permissions import IsCustomerAuthenticated
 
 
@@ -178,13 +178,16 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Override serializer data with data from client-side cookie
-        data['bank_name'] = self.request.COOKIES.get('bank_name', '')
-        data['customer_first_name'] = self.request.COOKIES.get('customer_first_name', '')
-        data['customer_last_name'] = self.request.COOKIES.get('customer_last_name', '')
-        data['customer_email_address'] = self.request.COOKIES.get('customer_email_address', '')
-        data['branch_name'] = self.request.COOKIES.get('branch_name', '')
-        data['created_by'] = self.request.COOKIES.get('created_by', '')
-        data['name_as_per_bank_record'] = self.request.COOKIES.get('name_as_per_bank_record', '')
+        for field in (
+                'bank_name',
+                'customer_first_name',
+                'customer_last_name',
+                'customer_email_address',
+                'branch_name',
+                'created_by',
+                'name_as_per_bank_record',
+            ):
+            data[field] = self.request.COOKIES.get(field, '')
 
         return Response(data)
 
