@@ -14,7 +14,7 @@ from demoapp.serializers import (
     BankSerializer,
     CustomerBankAccountSerializer,
 )
-from typing import Any, Final, Optional
+from typing import Any, Dict, Optional
 from demoapp.permissions import IsCustomerAuthenticated
 
 
@@ -78,6 +78,22 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
         customer: Customer = self.request.user                  # type: ignore
         return CustomerBankAccount.get_active_account(customer)
 
+    def set_cookie(self, response: Response, data: Dict[str, Any]) -> Response:
+        # Get bank and customer objects to save their details in cookies
+        bank: Bank = Bank.get_bank_by_id(data['bank'])
+        customer = Customer.get_customer_by_id(data['customer'])
+
+        # Set client side cookie
+        response.set_cookie('bank_name', bank.name)
+        response.set_cookie('customer_first_name', customer.first_name)
+        response.set_cookie('customer_last_name', customer.last_name)
+        response.set_cookie('customer_email_address', customer.email)
+        response.set_cookie('branch_name', data['branch_name'])
+        response.set_cookie('created_by', str(customer))
+        response.set_cookie('name_as_per_bank_record', data['name_as_per_bank_record'])
+
+        return response
+
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         customer: Customer = request.user                       # type: ignore
 
@@ -127,7 +143,8 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
                                 f"account: { str(oe) }")
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response: Response = Response(serializer.data, status=status.HTTP_201_CREATED)
+        return self.set_cookie(response, serializer.data)
 
     def perform_create(self, serializer) -> None:
         customer: Customer = self.request.user                  # type: ignore
@@ -153,12 +170,23 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            return Response(self.get_serializer(active_account).data)
+            data: Dict[str, Any] = self.get_serializer(active_account).data
         except OperationalError as oe:
             return Response(data={
                 "message": (f"An error occurred while trying to serialize "
                             f"account details: { str(oe) }")
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Override serializer data with data from client-side cookie
+        data['bank_name'] = self.request.COOKIES['bank_name']
+        data['customer_first_name'] = self.request.COOKIES['customer_first_name']
+        data['customer_last_name'] = self.request.COOKIES['customer_last_name']
+        data['customer_email_address'] = self.request.COOKIES['customer_email_address']
+        data['branch_name'] = self.request.COOKIES['branch_name']
+        data['created_by'] = self.request.COOKIES['created_by']
+        data['name_as_per_bank_record'] = self.request.COOKIES['name_as_per_bank_record']
+
+        return Response(data)
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         if kwargs.get('pk'):
@@ -189,7 +217,9 @@ class CustomerBankAccountViewSet(viewsets.ModelViewSet):
                 "message": (f"An error occurred while trying to update details "
                             f"of active account: { str(oe) }")
             }, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.data)
+
+        response: Response = Response(serializer.data)
+        return self.set_cookie(response, serializer.data)
 
     def put(self, request, *args, **kwargs) -> Response:
         return self.update(request, *args, **kwargs)

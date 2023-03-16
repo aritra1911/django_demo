@@ -31,10 +31,11 @@ class Customer(AbstractBaseUser, PermissionsMixin):
         return f'{self.first_name} {self.last_name}'
 
     @classmethod
-    def get_queryset_by_id(
-        cls: Type["Customer"],
-        id: int
-    ) -> Optional[models.QuerySet["Customer"]]:
+    def get_customer_by_id(cls, id: int) -> 'Customer':
+        return cls.objects.get(id=id)
+
+    @classmethod
+    def get_queryset_by_id(cls, id: int) -> Optional[models.QuerySet["Customer"]]:
         queryset = cls.objects.filter(id=id)
         return queryset if queryset else None
 
@@ -51,6 +52,10 @@ class Bank(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def get_bank_by_id(cls, id: int) -> 'Bank':
+        return cls.objects.get(id=id)
 
 
 class CustomerBankAccount(models.Model):
